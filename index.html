@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu & Shopping Cart Makanan</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen pb-20">
+
+  <!-- Header -->
+  <header class="bg-red-600 text-white p-4 shadow-md sticky top-0 z-50 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Gerai Makanan Saya</h1>
+    <div class="relative">
+      <span class="text-2xl">🛒</span>
+      <span id="cart-count" class="absolute -top-2 -right-2 bg-yellow-400 text-red-900 font-bold text-xs px-2 py-0.5 rounded-full">0</span>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+    
+    <!-- Bahagian Senarai Makanan (2 Kolum pada skrin besar) -->
+    <section class="md:col-span-2 space-y-4">
+      <h2 class="text-lg font-bold text-gray-800 border-b pb-2">Senarai Menu</h2>
+
+      <!-- Kad Produk Makanan -->
+      <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col sm:flex-row p-3 gap-4 border">
+        
+        <!-- Ruang Gambar Makanan -->
+        <div class="w-full sm:w-36 h-36 bg-gray-200 rounded-md overflow-hidden flex-shrink-0 relative">
+          <!-- Tukar src di bawah dengan URL gambar makanan anda -->
+          <img 
+            src="https://images.unsplash.com/photo-1562967914-608f82629710?w=500&auto=format&fit=crop" 
+            alt="Ayam Goreng Balado" 
+            class="w-full h-full object-cover"
+          >
+        </div>
+
+        <!-- Info Makanan -->
+        <div class="flex-1 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-gray-900 text-lg">Ayam Goreng Balado</h3>
+            <p class="text-sm text-gray-600 mt-1">Ayam goreng rempah dengan sambal balado pedas berapi.</p>
+          </div>
+          <div class="flex justify-between items-center mt-3">
+            <span class="text-red-600 font-bold text-lg">RM 12.00</span>
+            <button 
+              onclick="addToCart('Ayam Goreng Balado', 12.00)" 
+              class="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition">
+              + Tambah
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Bahagian Ringkasan Cart (1 Kolum) -->
+    <section class="bg-white p-4 rounded-lg shadow-md border h-fit sticky top-20">
+      <h2 class="text-lg font-bold text-gray-800 border-b pb-2 mb-3">Troli Pesanan</h2>
+      
+      <div id="cart-items" class="space-y-2 text-sm max-h-60 overflow-y-auto">
+        <p class="text-gray-500 italic">Troli anda masih kosong.</p>
+      </div>
+
+      <div class="border-t mt-4 pt-3 space-y-2">
+        <div class="flex justify-between font-bold text-base text-gray-900">
+          <span>Jumlah Keseluruhan:</span>
+          <span id="cart-total">RM 0.00</span>
+        </div>
+
+        <button 
+          onclick="checkoutWhatsApp()" 
+          class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-center mt-2 flex items-center justify-center gap-2 transition">
+          <span>Hantar Pesanan (WhatsApp)</span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Skrip JavaScript Cart -->
+  <script>
+    let cart = [];
+
+    function addToCart(name, price) {
+      const existing = cart.find(item => item.name === name);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        cart.push({ name, price, qty: 1 });
+      }
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const cartItemsContainer = document.getElementById('cart-items');
+      const cartCount = document.getElementById('cart-count');
+      const cartTotal = document.getElementById('cart-total');
+
+      if (cart.length === 0) {
+        cartItemsContainer.innerHTML = '<p class="text-gray-500 italic">Troli anda masih kosong.</p>';
+        cartCount.innerText = '0';
+        cartTotal.innerText = 'RM 0.00';
+        return;
+      }
+
+      let total = 0;
+      let count = 0;
+      cartItemsContainer.innerHTML = '';
+
+      cart.forEach((item, index) => {
+        const itemTotal = item.price * item.qty;
+        total += itemTotal;
+        count += item.qty;
+
+        cartItemsContainer.innerHTML += `
+          <div class="flex justify-between items-center border-b pb-1">
+            <div>
+              <p class="font-medium text-gray-800">${item.name}</p>
+              <p class="text-xs text-gray-500">RM ${item.price.toFixed(2)} x ${item.qty}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-gray-700">RM ${itemTotal.toFixed(2)}</span>
+              <button onclick="removeItem(${index})" class="text-red-500 font-bold px-1">✕</button>
+            </div>
+          </div>
+        `;
+      });
+
+      cartCount.innerText = count;
+      cartTotal.innerText = `RM ${total.toFixed(2)}`;
+    }
+
+    function removeItem(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    }
+
+    function checkoutWhatsApp() {
+      if (cart.length === 0) {
+        alert("Troli anda kosong!");
+        return;
+      }
+
+      // Tukar nombor telefon WhatsApp anda di sini (Format 601xxxxxxxx)
+      const phone = "60123456789"; 
+      
+      let message = "Salam, saya nak buat pesanan makanan:\n\n";
+      let total = 0;
+
+      cart.forEach(item => {
+        const subtotal = item.price * item.qty;
+        total += subtotal;
+        message += `- ${item.name} x${item.qty} = RM ${subtotal.toFixed(2)}\n`;
+      });
+
+      message += `\n*Jumlah Keseluruhan: RM ${total.toFixed(2)}*`;
+
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank');
+    }
+  </script>
+</body>
+</html>
