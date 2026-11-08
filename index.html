@@ -18,7 +18,6 @@
 
   <main class="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
 
-    <!-- Senarai menu dijana oleh JavaScript daripada data di bawah -->
     <section id="menu" class="md:col-span-2 space-y-4"></section>
 
     <section class="bg-white p-4 rounded-lg shadow-md border h-fit sticky top-20">
@@ -26,14 +25,48 @@
       <div id="cart-items" class="space-y-2 text-sm max-h-60 overflow-y-auto">
         <p class="text-gray-500 italic">Troli anda masih kosong.</p>
       </div>
+
+      <div class="mt-3">
+        <label for="order-note" class="block text-sm font-medium text-gray-700 mb-1">Nota untuk keseluruhan pesanan (pilihan)</label>
+        <textarea id="order-note" rows="2" placeholder="Cth: tak nak pedas, ambil pukul 7 malam..." class="w-full border rounded-lg p-2 text-sm"></textarea>
+      </div>
+
       <div class="border-t mt-4 pt-3 space-y-2">
         <div class="flex justify-between font-bold text-base text-gray-900">
           <span>Jumlah Keseluruhan:</span>
           <span id="cart-total">RM 0.00</span>
         </div>
-        <button onclick="checkoutWhatsApp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-center mt-2 transition">
-          Hantar Pesanan (WhatsApp)
-        </button>
+        <div class="space-y-2 pt-2 text-sm">
+          <input id="c-name" type="text" placeholder="Nama anda" class="w-full border rounded-lg p-2">
+          <input id="c-phone" type="tel" placeholder="No. telefon (cth 0123456789)" class="w-full border rounded-lg p-2">
+
+          <div class="flex gap-4 py-1">
+            <label class="flex items-center gap-1"><input type="radio" name="mode" value="Pickup" checked onchange="toggleMode()"> Pickup</label>
+            <label class="flex items-center gap-1"><input type="radio" name="mode" value="Dine In" onchange="toggleMode()"> Dine In</label>
+          </div>
+          <div id="pickup-box">
+            <label class="block text-xs text-gray-600 mb-1">Request masa pickup</label>
+            <input id="c-time" type="time" class="w-full border rounded-lg p-2">
+          </div>
+          <div id="dine-box" class="hidden">
+            <label class="block text-xs text-gray-600 mb-1">Bilangan orang makan</label>
+            <input id="c-pax" type="number" min="1" max="50" placeholder="Cth: 4" class="w-full border rounded-lg p-2">
+          </div>
+
+          <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-2 text-xs text-yellow-900">
+            <b>Penting:</b> pesanan hanya disahkan selepas pembayaran dibuat. Sila bayar dahulu, kemudian hantar bukti bayaran melalui WhatsApp. No order anda ialah 4 digit terakhir no. telefon.
+          </div>
+          <select id="pay-method" onchange="togglePay()" class="w-full border rounded-lg p-2">
+            <option value="Transfer">Bayaran: Transfer Bank</option>
+            <option value="QR">Bayaran: QR</option>
+          </select>
+          <div id="pay-info" class="text-xs text-gray-700 bg-gray-50 border rounded-lg p-2"></div>
+
+          <button onclick="submitOrder()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-center mt-2 transition">
+            Hantar Pesanan (WhatsApp)
+          </button>
+          <div id="done-box" class="hidden bg-green-50 border border-green-300 rounded-lg p-3 text-sm text-green-900"></div>
+        </div>
       </div>
     </section>
 
@@ -43,121 +76,227 @@
 
   <script>
     // ============================================================
-    // DATA MENU - EDIT DI SINI SAHAJA
-    // image: letak pautan atau nama fail (cth "fillet.jpg"). Kosongkan jika belum ada.
-    // options: label + harga. Kalau satu harga sahaja, letak satu pilihan.
+    // DATA MENU - EDIT DI SINI
     // ============================================================
-    const SET = "Set (dengan minuman)";
-    const NODRINK = "Tanpa minuman";
-    const ALC = "A la carte";
 
-    const chickenImg = "https://images.unsplash.com/photo-1562967914-608f82629710?w=500&auto=format&fit=crop";
+    // Senarai air (side order). Tambah / buang di sini.
+    const DRINKS = ["Pepsi", "7UP", "F&N Orange", "F&N Strawberry", "Mountain Dew", "Air Mineral", "Minute Maid Orange"];
 
-    const menu = [
-      { category: "Broasted Chicken", items: [
-        { name: "Broasted Chicken - Suku (2 pcs)", desc: "Broasted chicken suku.", image: chickenImg,
-          options: [{label: SET, price: 18.00}, {label: NODRINK, price: 16.50}, {label: ALC, price: 13.50}] },
-        { name: "Broasted Chicken - Separuh (4 pcs)", desc: "Broasted chicken separuh.", image: chickenImg,
-          options: [{label: SET, price: 26.50}, {label: NODRINK, price: 25.00}, {label: ALC, price: 22.00}] },
-        { name: "Broasted Chicken - Penuh (8 pcs)", desc: "Broasted chicken penuh.", image: chickenImg,
-          options: [{label: SET, price: 51.00}, {label: NODRINK, price: 46.50}, {label: ALC, price: 41.00}] },
-      ]},
-      { category: "Chicken Fillet", items: [
-        { name: "Chicken Fillet (3 pcs)", desc: "Chicken fillet 3 keping.", image: "",
-          options: [{label: SET, price: 16.00}, {label: NODRINK, price: 14.50}, {label: ALC, price: 10.50}] },
-        { name: "Chicken Fillet (5 pcs)", desc: "Chicken fillet 5 keping.", image: "",
-          options: [{label: SET, price: 21.00}, {label: NODRINK, price: 19.50}, {label: ALC, price: 17.00}] },
-      ]},
-      { category: "Fried Rolls", items: [
-        { name: "Pizza Roll", desc: "Fried roll pizza.", image: "", options: [{label: "Harga", price: 10.00}] },
-        { name: "Crispy Roll", desc: "Fried roll rangup.", image: "", options: [{label: "Harga", price: 9.00}] },
-      ]},
-      { category: "Cheesy Fries & Chicken", items: [
-        { name: "Cheesy Fries & Chicken - Kecil", desc: "Kentang goreng cheese dengan ayam.", image: "", options: [{label: "Harga", price: 10.00}] },
-        { name: "Cheesy Fries & Chicken - Besar", desc: "Kentang goreng cheese dengan ayam.", image: "", options: [{label: "Harga", price: 18.00}] },
-      ]},
-      { category: "Burger", items: [
-        { name: "BCK Burger", desc: "Burger ayam BCK.", image: "",
-          options: [{label: "Set", price: 14.50}, {label: ALC, price: 10.00}] },
-        { name: "Fillet Burger", desc: "Burger fillet ayam.", image: "",
-          options: [{label: "Set", price: 14.50}, {label: ALC, price: 10.00}] },
-        { name: "Shrimp Burger", desc: "Burger udang.", image: "",
-          options: [{label: "Set", price: 17.00}, {label: ALC, price: 12.50}] },
-      ]},
-      { category: "Shrimp", items: [
-        { name: "Shrimp", desc: "Udang goreng.", image: "",
-          options: [{label: SET, price: 31.00}, {label: NODRINK, price: 29.50}, {label: ALC, price: 25.50}] },
-      ]},
-      { category: "Fish", items: [
-        { name: "Fish (1 pcs)", desc: "Ikan goreng 1 keping.", image: "",
-          options: [{label: SET, price: 16.50}, {label: NODRINK, price: 15.00}, {label: ALC, price: 10.50}] },
-        { name: "Fish (2 pcs)", desc: "Ikan goreng 2 keping.", image: "",
-          options: [{label: SET, price: 24.00}, {label: NODRINK, price: 22.00}, {label: ALC, price: 19.00}] },
-      ]},
-      { category: "Sandwich", items: [
-        { name: "Sandwich Chicken", desc: "Sandwich ayam.", image: "",
-          options: [{label: "Set", price: 16.00}, {label: ALC, price: 10.00}] },
-        { name: "Sandwich Fish", desc: "Sandwich ikan.", image: "",
-          options: [{label: "Set", price: 16.50}, {label: ALC, price: 11.50}] },
-        { name: "Sandwich Shrimp", desc: "Sandwich udang.", image: "",
-          options: [{label: "Set", price: 17.50}, {label: ALC, price: 12.50}] },
-      ]},
-    ];
+    // Pilihan bahagian ayam untuk Broasted Chicken 2 pcs
+    const PARTS_2PCS = ["Thigh & Drumstick", "Chest & Wing"];
 
     // Tukar nombor WhatsApp di sini (format 601xxxxxxxx)
     const PHONE = "60129444916";
 
-    // ---------- Paparkan menu ----------
-    const menuEl = document.getElementById('menu');
+    // Maklumat bayaran (TUKAR)
+    const BANK_INFO = "Bank: NAMA BANK\nNo Akaun: 0000000000\nNama: NAMA PENERIMA";
+    const QR_IMAGE = "qr.png"; // letak fail gambar QR dalam folder yang sama
+
+    // URL Google Apps Script untuk simpan pesanan ke dashboard admin (lihat panduan).
+    // Jika kosong, pesanan disimpan dalam browser peranti ini sahaja.
+    const ORDERS_API = "";
+
+    const chickenImg = "https://images.unsplash.com/photo-1562967914-608f82629710?w=500&auto=format&fit=crop";
+
+    // Isi set untuk Broasted Chicken & Chicken Fillet
+    const base = (garlic, cocktail) =>
+      `Ayam, fries, roti, ${garlic} sos garlic, ${cocktail} sos cocktail`;
+
+    // 3 pilihan harga: Set / Tanpa minuman / A la carte
+    // drink: "choose" = pelanggan pilih air | "Pepsi Large" = air tetap | (kosong) = tiada air
+    function chickenOptions(garlic, cocktail, pSet, pNoDrink, pAlc, fixedDrink) {
+      return [
+        { label: "Set (dengan minuman)", price: pSet, drink: fixedDrink || "choose", includes: base(garlic, cocktail) },
+        { label: "Tanpa minuman", price: pNoDrink, includes: base(garlic, cocktail) },
+        { label: "A la carte", price: pAlc, includes: "Ayam sahaja" },
+      ];
+    }
+
+    // Untuk item lain: Set (ada air pilihan) + A la carte, dsb.
+    // TODO: isi "includes" mengikut kandungan sebenar set anda.
+    const menu = [
+      { category: "Broasted Chicken", items: [
+        { name: "Broasted Chicken - Suku (2 pcs)", desc: "Pilih bahagian ayam kegemaran anda.", image: chickenImg,
+          parts: PARTS_2PCS, options: chickenOptions(1, 1, 18.00, 16.50, 13.50) },
+        { name: "Broasted Chicken - Separuh (4 pcs)", desc: "Broasted chicken 4 keping.", image: chickenImg,
+          options: chickenOptions(2, 1, 26.50, 25.00, 22.00) },
+        { name: "Broasted Chicken - Penuh (8 pcs)", desc: "Broasted chicken 8 keping. Set dapat Pepsi Large.", image: chickenImg,
+          options: chickenOptions(4, 2, 51.00, 46.50, 41.00, "Pepsi Large") },
+      ]},
+      { category: "Chicken Fillet", items: [
+        { name: "Chicken Fillet (3 pcs)", desc: "Chicken fillet 3 keping.", image: "",
+          options: chickenOptions(1, 1, 16.00, 14.50, 10.50) },
+        { name: "Chicken Fillet (5 pcs)", desc: "Chicken fillet 5 keping.", image: "",
+          options: chickenOptions(2, 1, 21.00, 19.50, 17.00) },
+      ]},
+      { category: "Fried Rolls", items: [
+        { name: "Pizza Roll", desc: "Fried roll pizza.", image: "", options: [{ label: "Harga", price: 10.00 }] },
+        { name: "Crispy Roll", desc: "Fried roll rangup.", image: "", options: [{ label: "Harga", price: 9.00 }] },
+      ]},
+      { category: "Cheesy Fries & Chicken", items: [
+        { name: "Cheesy Fries & Chicken - Kecil", desc: "Kentang goreng cheese dengan ayam.", image: "", options: [{ label: "Harga", price: 10.00 }] },
+        { name: "Cheesy Fries & Chicken - Besar", desc: "Kentang goreng cheese dengan ayam.", image: "", options: [{ label: "Harga", price: 18.00 }] },
+      ]},
+      { category: "Burger", items: [
+        { name: "BCK Burger", desc: "Burger ayam BCK.", image: "", options: [
+          { label: "Set", price: 14.50, drink: "choose", includes: "Burger" },
+          { label: "A la carte", price: 10.00, includes: "Burger sahaja" } ] },
+        { name: "Fillet Burger", desc: "Burger fillet ayam.", image: "", options: [
+          { label: "Set", price: 14.50, drink: "choose", includes: "Burger" },
+          { label: "A la carte", price: 10.00, includes: "Burger sahaja" } ] },
+        { name: "Shrimp Burger", desc: "Burger udang.", image: "", options: [
+          { label: "Set", price: 17.00, drink: "choose", includes: "Burger" },
+          { label: "A la carte", price: 12.50, includes: "Burger sahaja" } ] },
+      ]},
+      { category: "Shrimp", items: [
+        { name: "Shrimp", desc: "Udang goreng.", image: "", options: [
+          { label: "Set (dengan minuman)", price: 31.00, drink: "choose", includes: "Udang" },
+          { label: "Tanpa minuman", price: 29.50, includes: "Udang" },
+          { label: "A la carte", price: 25.50, includes: "Udang sahaja" } ] },
+      ]},
+      { category: "Fish", items: [
+        { name: "Fish (1 pcs)", desc: "Ikan goreng 1 keping.", image: "", options: [
+          { label: "Set (dengan minuman)", price: 16.50, drink: "choose", includes: "Ikan" },
+          { label: "Tanpa minuman", price: 15.00, includes: "Ikan" },
+          { label: "A la carte", price: 10.50, includes: "Ikan sahaja" } ] },
+        { name: "Fish (2 pcs)", desc: "Ikan goreng 2 keping.", image: "", options: [
+          { label: "Set (dengan minuman)", price: 24.00, drink: "choose", includes: "Ikan" },
+          { label: "Tanpa minuman", price: 22.00, includes: "Ikan" },
+          { label: "A la carte", price: 19.00, includes: "Ikan sahaja" } ] },
+      ]},
+      { category: "Sandwich", items: [
+        { name: "Sandwich Chicken", desc: "Sandwich ayam.", image: "", options: [
+          { label: "Set", price: 16.00, drink: "choose", includes: "Sandwich" },
+          { label: "A la carte", price: 10.00, includes: "Sandwich sahaja" } ] },
+        { name: "Sandwich Fish", desc: "Sandwich ikan.", image: "", options: [
+          { label: "Set", price: 16.50, drink: "choose", includes: "Sandwich" },
+          { label: "A la carte", price: 11.50, includes: "Sandwich sahaja" } ] },
+        { name: "Sandwich Shrimp", desc: "Sandwich udang.", image: "", options: [
+          { label: "Set", price: 17.50, drink: "choose", includes: "Sandwich" },
+          { label: "A la carte", price: 12.50, includes: "Sandwich sahaja" } ] },
+      ]},
+    ];
+
+    // ============================================================
+    // KOD PAPARAN (tak perlu edit)
+    // ============================================================
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const menuEl = $('menu');
     menu.forEach((cat, ci) => {
-      let html = `<h2 class="text-lg font-bold text-gray-800 border-b pb-2 pt-2">${cat.category}</h2>`;
+      let html = `<h2 class="text-lg font-bold text-gray-800 border-b pb-2 pt-2">${esc(cat.category)}</h2>`;
       cat.items.forEach((item, ii) => {
+        const id = `${ci}-${ii}`;
         const img = item.image
-          ? `<img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">`
+          ? `<img src="${esc(item.image)}" alt="${esc(item.name)}" class="w-full h-full object-cover">`
           : `<div class="w-full h-full flex items-center justify-center text-5xl">🍗</div>`;
-        const opts = item.options.map((o, oi) =>
-          `<option value="${oi}">${o.label} - RM ${o.price.toFixed(2)}</option>`).join('');
+
+        const optHtml = item.options.map((o, oi) =>
+          `<option value="${oi}">${esc(o.label)} - RM ${o.price.toFixed(2)}</option>`).join('');
+
+        const partHtml = item.parts ? `
+          <select id="p-${id}" class="border rounded-lg px-2 py-2 text-sm w-full">
+            <option value="">-- Pilih bahagian ayam --</option>
+            ${item.parts.map(p => `<option>${esc(p)}</option>`).join('')}
+          </select>` : '';
+
+        const drinkHtml = `
+          <select id="d-${id}" class="hidden border rounded-lg px-2 py-2 text-sm w-full">
+            <option value="">-- Pilih air --</option>
+            ${DRINKS.map(d => `<option>${esc(d)}</option>`).join('')}
+          </select>`;
+
         html += `
         <div class="bg-white rounded-lg shadow-md overflow-hidden flex flex-col sm:flex-row p-3 gap-4 border">
           <div class="w-full sm:w-36 h-36 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">${img}</div>
-          <div class="flex-1 flex flex-col justify-between">
+          <div class="flex-1 flex flex-col gap-2">
             <div>
-              <h3 class="font-bold text-gray-900 text-lg">${item.name}</h3>
-              <p class="text-sm text-gray-600 mt-1">${item.desc}</p>
+              <h3 class="font-bold text-gray-900 text-lg">${esc(item.name)}</h3>
+              <p class="text-sm text-gray-600 mt-1">${esc(item.desc)}</p>
             </div>
-            <div class="flex flex-wrap justify-between items-center gap-2 mt-3">
-              <select id="opt-${ci}-${ii}" class="border rounded-lg px-2 py-2 text-sm text-gray-800">${opts}</select>
-              <button onclick="addFromMenu(${ci}, ${ii})" class="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition">+ Tambah</button>
+            ${partHtml}
+            <select id="o-${id}" onchange="refreshCard(${ci},${ii})" class="border rounded-lg px-2 py-2 text-sm w-full">${optHtml}</select>
+            ${drinkHtml}
+            <div id="inc-${id}" class="text-xs text-gray-600 bg-gray-50 border rounded-md p-2"></div>
+            <input id="n-${id}" type="text" maxlength="120" placeholder="Nota / permintaan (pilihan)" class="border rounded-lg px-2 py-2 text-sm w-full">
+            <div class="flex justify-between items-center mt-1">
+              <span id="price-${id}" class="text-red-600 font-bold text-lg"></span>
+              <button onclick="addFromMenu(${ci},${ii})" class="bg-red-600 hover:bg-red-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition">+ Tambah</button>
             </div>
           </div>
         </div>`;
       });
       menuEl.insertAdjacentHTML('beforeend', html);
     });
+    menu.forEach((cat, ci) => cat.items.forEach((_, ii) => refreshCard(ci, ii)));
+
+    function refreshCard(ci, ii) {
+      const item = menu[ci].items[ii];
+      const id = `${ci}-${ii}`;
+      const opt = item.options[$(`o-${id}`).value];
+      const drinkEl = $(`d-${id}`);
+      let info = '';
+      if (opt.includes) info += `<b>Termasuk:</b> ${esc(opt.includes)}`;
+      if (opt.drink === 'choose') {
+        drinkEl.classList.remove('hidden');
+        info += `${info ? '<br>' : ''}<b>Air:</b> pilih satu di atas`;
+      } else {
+        drinkEl.classList.add('hidden');
+        drinkEl.value = '';
+        if (opt.drink) info += `${info ? '<br>' : ''}<b>Air:</b> ${esc(opt.drink)}`;
+      }
+      $(`inc-${id}`).innerHTML = info;
+      $(`inc-${id}`).classList.toggle('hidden', !info);
+      $(`price-${id}`).innerText = `RM ${opt.price.toFixed(2)}`;
+    }
 
     function addFromMenu(ci, ii) {
       const item = menu[ci].items[ii];
-      const opt = item.options[document.getElementById(`opt-${ci}-${ii}`).value];
-      const name = item.options.length > 1 || opt.label !== "Harga"
-        ? `${item.name} [${opt.label}]` : item.name;
-      addToCart(name, opt.price);
+      const id = `${ci}-${ii}`;
+      const opt = item.options[$(`o-${id}`).value];
+      const details = [];
+
+      if (item.options.length > 1) details.push(opt.label);
+
+      if (item.parts) {
+        const part = $(`p-${id}`).value;
+        if (!part) { alert('Sila pilih bahagian ayam.'); return; }
+        details.push(`Bahagian: ${part}`);
+      }
+
+      if (opt.drink === 'choose') {
+        const drink = $(`d-${id}`).value;
+        if (!drink) { alert('Sila pilih air untuk set ini.'); return; }
+        details.push(`Air: ${drink}`);
+      } else if (opt.drink) {
+        details.push(`Air: ${opt.drink}`);
+      }
+
+      const note = $(`n-${id}`).value.trim();
+      if (note) details.push(`Nota: ${note}`);
+
+      addToCart(item.name, opt.price, details);
+      $(`n-${id}`).value = '';
     }
 
     // ---------- Troli ----------
     let cart = [];
 
-    function addToCart(name, price) {
-      const existing = cart.find(i => i.name === name);
-      if (existing) existing.qty += 1; else cart.push({ name, price, qty: 1 });
+    function addToCart(name, price, details) {
+      const key = name + '|' + details.join('|');
+      const existing = cart.find(i => i.key === key);
+      if (existing) existing.qty += 1;
+      else cart.push({ key, name, price, details, qty: 1 });
       updateCartUI();
     }
 
     function updateCartUI() {
-      const box = document.getElementById('cart-items');
+      const box = $('cart-items');
       if (cart.length === 0) {
         box.innerHTML = '<p class="text-gray-500 italic">Troli anda masih kosong.</p>';
-        document.getElementById('cart-count').innerText = '0';
-        document.getElementById('cart-total').innerText = 'RM 0.00';
+        $('cart-count').innerText = '0';
+        $('cart-total').innerText = 'RM 0.00';
         return;
       }
       let total = 0, count = 0;
@@ -166,9 +305,10 @@
         const itemTotal = item.price * item.qty;
         total += itemTotal; count += item.qty;
         box.innerHTML += `
-          <div class="flex justify-between items-center border-b pb-1">
+          <div class="flex justify-between items-start border-b pb-1 gap-2">
             <div>
-              <p class="font-medium text-gray-800">${item.name}</p>
+              <p class="font-medium text-gray-800">${esc(item.name)}</p>
+              ${item.details.map(d => `<p class="text-xs text-gray-600">${esc(d)}</p>`).join('')}
               <p class="text-xs text-gray-500">RM ${item.price.toFixed(2)} x ${item.qty}</p>
             </div>
             <div class="flex items-center gap-2">
@@ -177,23 +317,82 @@
             </div>
           </div>`;
       });
-      document.getElementById('cart-count').innerText = count;
-      document.getElementById('cart-total').innerText = `RM ${total.toFixed(2)}`;
+      $('cart-count').innerText = count;
+      $('cart-total').innerText = `RM ${total.toFixed(2)}`;
     }
 
     function removeItem(index) { cart.splice(index, 1); updateCartUI(); }
 
-    function checkoutWhatsApp() {
+    function toggleMode() {
+      const dine = document.querySelector('input[name="mode"]:checked').value === 'Dine In';
+      $('pickup-box').classList.toggle('hidden', dine);
+      $('dine-box').classList.toggle('hidden', !dine);
+    }
+
+    function togglePay() {
+      $('pay-info').innerHTML = $('pay-method').value === 'QR'
+        ? `<img src="${esc(QR_IMAGE)}" alt="QR Pembayaran" class="w-40 mx-auto rounded border">`
+        : esc(BANK_INFO).replace(/\n/g, '<br>');
+    }
+    toggleMode(); togglePay();
+
+    function saveOrder(order) {
+      if (ORDERS_API) {
+        fetch(ORDERS_API, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'add', order }) }).catch(() => {});
+      } else {
+        try {
+          const all = JSON.parse(localStorage.getItem('orders') || '[]');
+          all.push(order);
+          localStorage.setItem('orders', JSON.stringify(all));
+        } catch (e) {}
+      }
+    }
+
+    function submitOrder() {
       if (cart.length === 0) { alert("Troli anda kosong!"); return; }
-      let message = "Salam, saya nak buat pesanan makanan:\n\n";
+      const name = $('c-name').value.trim();
+      const phone = $('c-phone').value.replace(/\D/g, '');
+      if (!name) { alert('Sila isi nama anda.'); return; }
+      if (phone.length < 9) { alert('Sila isi no. telefon yang betul.'); return; }
+
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      let info;
+      if (mode === 'Pickup') {
+        const t = $('c-time').value;
+        if (!t) { alert('Sila pilih masa pickup.'); return; }
+        info = `Masa pickup: ${t}`;
+      } else {
+        const px = parseInt($('c-pax').value, 10);
+        if (!px || px < 1) { alert('Sila isi bilangan orang makan.'); return; }
+        info = `Bilangan orang: ${px}`;
+      }
+
+      const payment = $('pay-method').value === 'QR' ? 'QR' : 'Transfer Bank';
+      const orderNo = phone.slice(-4);
+      const note = $('order-note').value.trim();
       let total = 0;
+      let message = `Salam, saya nak buat pesanan.\n*No Order: ${orderNo}*\nNama: ${name}\nTel: ${phone}\nJenis: ${mode} (${info})\nBayaran: ${payment}\n\n`;
       cart.forEach(item => {
-        const subtotal = item.price * item.qty;
-        total += subtotal;
-        message += `- ${item.name} x${item.qty} = RM ${subtotal.toFixed(2)}\n`;
+        const sub = item.price * item.qty;
+        total += sub;
+        message += `- ${item.name} x${item.qty} = RM ${sub.toFixed(2)}\n`;
+        item.details.forEach(d => { message += `   ${d}\n`; });
       });
-      message += `\n*Jumlah Keseluruhan: RM ${total.toFixed(2)}*`;
+      message += `\n*Jumlah: RM ${total.toFixed(2)}*`;
+      if (note) message += `\nNota: ${note}`;
+      message += `\n\nSaya akan hantar bukti bayaran.`;
+
+      saveOrder({ orderNo, name, phone, mode, info, payment, note, total,
+        items: cart.map(i => ({ name: i.name, qty: i.qty, price: i.price, details: i.details })),
+        status: 'Menunggu bayaran', time: new Date().toISOString() });
+
+      const done = $('done-box');
+      done.classList.remove('hidden');
+      done.innerHTML = `<b>No Order anda: ${orderNo}</b><br>Sila bayar <b>RM ${total.toFixed(2)}</b> melalui ${payment} dan hantar bukti bayaran di WhatsApp. Pesanan disahkan selepas pembayaran diterima.`;
+
       window.open(`https://wa.me/${PHONE}?text=${encodeURIComponent(message)}`, '_blank');
+      cart = []; updateCartUI();
     }
   </script>
 </body>
