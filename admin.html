@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Pesanan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+  <header class="bg-gray-900 text-white p-4 flex justify-between items-center">
+    <h1 class="text-lg font-bold">Admin - Senarai Pesanan</h1>
+    <button onclick="load()" class="bg-gray-700 px-3 py-1 rounded text-sm">Muat semula</button>
+  </header>
+
+  <main class="max-w-5xl mx-auto p-4 space-y-3">
+    <input id="q" oninput="render()" placeholder="Cari nama / no telefon / no order" class="w-full border rounded-lg p-2 text-sm">
+    <p id="msg" class="text-sm text-red-600"></p>
+    <div id="list" class="space-y-3"></div>
+  </main>
+
+  <script>
+    // Letak URL Google Apps Script yang SAMA seperti dalam index.html.
+    // Jika kosong, hanya pesanan yang dibuat pada peranti/browser ini dipaparkan.
+    const ORDERS_API = "";
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    let pin = sessionStorage.getItem('pin') || '';
+    let orders = [];
+    const wa = p => (String(p).startsWith('0') ? '6' + p : String(p));
+
+    async function load() {
+      $('msg').textContent = '';
+      if (ORDERS_API) {
+        if (!pin) { pin = prompt('PIN admin:') || ''; sessionStorage.setItem('pin', pin); }
+        try {
+          const r = await fetch(ORDERS_API + '?pin=' + encodeURIComponent(pin));
+          orders = await r.json();
+          if (!orders.length && pin) $('msg').textContent = 'Tiada pesanan, atau PIN salah.';
+        } catch (e) { $('msg').textContent = 'Gagal sambung ke pelayan.'; }
+      } else {
+        try { orders = JSON.parse(localStorage.getItem('orders') || '[]'); } catch (e) { orders = []; }
+        orders.forEach((o, i) => { o.id = o.id || String(i); });
+      }
+      orders = orders.slice().reverse();
+      render();
+    }
+
+    async function setStatus(id, status) {
+      if (ORDERS_API) {
+        await fetch(ORDERS_API, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({ action: 'status', pin, id, status }) });
+        setTimeout(load, 1500);
+      } else {
+        const all = JSON.parse(localStorage.getItem('orders') || '[]');
+        all.forEach((o, i) => { if (String(o.id || i) === id) o.status = status; });
+        localStorage.setItem('orders', JSON.stringify(all));
+        load();
+      }
+    }
+
+    function render() {
+      const q = $('q').value.trim().toLowerCase();
+      const colors = { 'Menunggu bayaran': 'bg-yellow-100 text-yellow-800', 'Dibayar': 'bg-green-100 text-green-800', 'Siap': 'bg-blue-100 text-blue-800' };
+      const rows = orders.filter(o => !q || [o.name, o.phone, o.orderNo].join(' ').toLowerCase().includes(q));
+      $('list').innerHTML = rows.length ? rows.map(o => `
+        <div class="bg-white rounded-lg shadow border p-3 text-sm">
+          <div class="flex flex-wrap justify-between gap-2">
+            <div>
+              <span class="font-bold text-lg">#${esc(o.orderNo)}</span>
+              <span class="ml-2 font-medium">${esc(o.name)}</span>
+              <a class="ml-2 text-blue-600" href="https://wa.me/${esc(wa(o.phone))}" target="_blank">${esc(o.phone)}</a>
+            </div>
+            <span class="px-2 py-1 rounded text-xs font-bold ${colors[o.status] || ''}">${esc(o.status)}</span>
+          </div>
+          <p class="text-gray-600 mt-1">${esc(o.mode)} - ${esc(o.info)} | Bayaran: ${esc(o.payment)} | ${new Date(o.time).toLocaleString('ms-MY')}</p>
+          <ul class="mt-2 list-disc ml-5">
+            ${o.items.map(i => `<li>${esc(i.name)} x${i.qty}<span class="text-gray-500"> ${i.details.map(esc).join(', ')}</span></li>`).join('')}
+          </ul>
+          ${o.note ? `<p class="mt-1 text-gray-700">Nota: ${esc(o.note)}</p>` : ''}
+          <div class="flex flex-wrap justify-between items-center mt-2 gap-2">
+            <b>RM ${Number(o.total).toFixed(2)}</b>
+            <div class="flex gap-2">
+              <button onclick="setStatus('${esc(o.id)}','Dibayar')" class="bg-green-600 text-white px-3 py-1 rounded">Sah bayaran</button>
+              <a href="https://wa.me/${esc(wa(o.phone))}?text=${encodeURIComponent('Bayaran diterima. No order anda: ' + o.orderNo + '. Terima kasih!')}" target="_blank" onclick="setStatus('${esc(o.id)}','Dibayar')" class="bg-emerald-700 text-white px-3 py-1 rounded">Sah &amp; hantar no order</a>
+              <button onclick="setStatus('${esc(o.id)}','Siap')" class="bg-blue-600 text-white px-3 py-1 rounded">Siap</button>
+            </div>
+          </div>
+        </div>`).join('') : '<p class="text-gray-500">Tiada pesanan.</p>';
+    }
+
+    load();
+    setInterval(load, 30000);
+  </script>
+</body>
+</html>
