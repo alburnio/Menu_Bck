@@ -35,9 +35,12 @@
         if (!pin) { pin = prompt('PIN admin:') || ''; sessionStorage.setItem('pin', pin); }
         try {
           const r = await fetch(ORDERS_API + '?pin=' + encodeURIComponent(pin));
-          orders = await r.json();
-          if (!orders.length && pin) $('msg').textContent = 'Tiada pesanan, atau PIN salah.';
-        } catch (e) { $('msg').textContent = 'Gagal sambung ke pelayan.'; }
+          const data = await r.json();
+          if (data && data.error === 'pin') {
+            sessionStorage.removeItem('pin'); pin = ''; orders = [];
+            $('msg').textContent = 'PIN salah. Tekan Muat semula dan taip PIN yang betul.';
+          } else { orders = data; }
+        } catch (e) { orders = []; $('msg').textContent = 'Gagal sambung ke pelayan: ' + e.message; }
       } else {
         try { orders = JSON.parse(localStorage.getItem('orders') || '[]'); } catch (e) { orders = []; }
         orders.forEach((o, i) => { o.id = o.id || String(i); });
