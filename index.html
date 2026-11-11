@@ -369,17 +369,17 @@
       if (!name) { alert(t.aName); return; }
       if (phone.length < 9) { alert(t.aPhone); return; }
       const mode = document.querySelector('input[name="mode"]:checked').value; let info;
-      if (mode === 'Pickup') { const tm = $('c-time').value; if (!tm) { alert(t.aTime); return; } info = `Masa pickup: ${tm}`; }
-      else { const px = parseInt($('c-pax').value, 10); if (!px || px < 1) { alert(t.aPax); return; } info = `Bilangan orang: ${px}`; }
+      if (mode === 'Pickup') { const tm = $('c-time').value; if (!tm) { alert(t.aTime); return; } info = `Pickup time: ${tm}`; }
+      else { const px = parseInt($('c-pax').value, 10); if (!px || px < 1) { alert(t.aPax); return; } info = `Diners: ${px}`; }
 
-      const pi = $('pay-method').value === 'QR' ? 1 : 0, payment = T.ms.payT[pi];
+      const pi = $('pay-method').value === 'QR' ? 1 : 0, payment = T.en.payT[pi];
       const orderNo = phone.slice(-4), note = $('order-note').value.trim();
-      // Mesej & rekod untuk kedai: nama item Inggeris, butiran Bahasa Melayu
-      const items = cart.map(c => ({ name: M[c.ci].items[c.ii].n, qty: c.qty, price: c.price, details: c.details.map(d => detailText(d, 'ms')) }));
+      // Mesej & rekod untuk kedai: semuanya dalam Bahasa Inggeris
+      const items = cart.map(c => ({ name: M[c.ci].items[c.ii].n, qty: c.qty, price: c.price, details: c.details.map(d => detailText(d, 'en')) }));
       const total = items.reduce((s, i) => s + i.price * i.qty, 0);
-      let msg = `Salam, saya nak buat pesanan.\n*No Order: ${orderNo}*\nNama: ${name}\nTel: ${phone}\nJenis: ${mode} (${info})\nBayaran: ${payment}\n\n`;
+      let msg = `Hi, I would like to place an order.\n*Order No: ${orderNo}*\nName: ${name}\nPhone: ${phone}\nType: ${mode} (${info})\nPayment: ${payment}\n\n`;
       items.forEach(i => { msg += `- ${i.name} x${i.qty} = RM ${(i.price * i.qty).toFixed(2)}\n`; i.details.forEach(d => msg += `   ${d}\n`); });
-      msg += `\n*Jumlah: RM ${total.toFixed(2)}*`; if (note) msg += `\nNota: ${note}`; msg += `\n\nSaya akan hantar bukti bayaran.`;
+      msg += `\n*Total: RM ${total.toFixed(2)}*`; if (note) msg += `\nNote: ${note}`; msg += `\n\nI will send the proof of payment.`;
 
       saveOrder({ orderNo, name, phone, mode, info, payment, note, total, items, status:'Menunggu bayaran', time:new Date().toISOString() });
       const done = $('done-box');
