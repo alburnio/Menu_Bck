@@ -98,7 +98,7 @@
     // ================= TETAPAN (TUKAR DI SINI) =================
     const PHONE = "60192993681";
     const BANK_INFO = "Bank: Maybank\nNo Akaun: 562209639636\nNama: GOLDEN BROASTED CHIKEN SDN.BHD";
-    const QR_IMAGE = "qr.png";
+    const QR_IMAGE = "qr-payment.jpg";
     const ORDERS_API = "https://script.google.com/macros/s/AKfycbxnHzKt2f4DMORwPli5Flc1nBB8EpC7XIa2hw_8-JsUNs5O3pXyq0tzG6yK46P7VjTuew/exec"; // URL Google Apps Script (kosongkan jika belum ada)
     const MAX_QTY = 99;
 
@@ -158,8 +158,7 @@
     };
 
     // ================= DATA MENU =================
-    const img = "https://images.unsplash.com/photo-1562967914-608f82629710?w=500&auto=format&fit=crop";
-    const copt = (g, c, p1, p2, p3, fx) => [
+        const copt = (g, c, p1, p2, p3, fx) => [
       { k:"set", price:p1, drink:fx||"choose", i:["chick",g,c] },
       { k:"nodrink", price:p2, i:["chick",g,c] },
       { k:"alc", price:p3, i:["only","chicken"] }];
@@ -170,9 +169,9 @@
 
     const M = [
       { c:"broasted", e:"🍗", items:[
-        { n:"Broasted Chicken - Quarter (2 pcs)", a:"دجاج بروستد - ربع (2 قطعة)", img, parts:1, o:copt(1,1,18,16.5,13.5) },
-        { n:"Broasted Chicken - Half (4 pcs)", a:"دجاج بروستد - نصف (4 قطع)", img, o:copt(2,1,26.5,25,22) },
-        { n:"Broasted Chicken - Whole (8 pcs)", a:"دجاج بروستد - كامل (8 قطع)", img, o:copt(4,2,51,46.5,41,"L") }]},
+        { n:"Broasted Chicken - Quarter (2 pcs)", a:"دجاج بروستد - ربع (2 قطعة)", img:"set-2pcs.jpg", parts:1, o:copt(1,1,18,16.5,13.5) },
+        { n:"Broasted Chicken - Half (4 pcs)", a:"دجاج بروستد - نصف (4 قطع)", img:"set-4pcs.jpg", o:copt(2,1,26.5,25,22) },
+        { n:"Broasted Chicken - Whole (8 pcs)", a:"دجاج بروستد - كامل (8 قطع)", img:"set-8pcs.jpg", o:copt(4,2,51,46.5,41,"L") }]},
       { c:"fillet", e:"🍗", items:[
         { n:"Chicken Fillet (3 pcs)", a:"فيليه الدجاج (3 قطع)", o:copt(1,1,16,14.5,10.5) },
         { n:"Chicken Fillet (5 pcs)", a:"فيليه الدجاج (5 قطع)", o:copt(2,1,21,19.5,17) }]},
@@ -185,7 +184,7 @@
         { n:"BCK Burger", a:"برجر BCK", o:o2("burger",14.5,10) },
         { n:"Fillet Burger", a:"برجر فيليه", o:o2("burger",14.5,10) },
         { n:"Shrimp Burger", a:"برجر روبيان", o:o2("burger",17,12.5) }]},
-      { c:"shrimp", e:"🍤", items:[{ n:"Shrimp", a:"روبيان", o:o3("shrimp",31,29.5,25.5) }]},
+      { c:"shrimp", e:"🍤", items:[{ n:"Shrimp", a:"روبيان", img:"shrimp.jpg", o:o3("shrimp",31,29.5,25.5) }]},
       { c:"fish", e:"🐟", items:[
         { n:"Fish (1 pcs)", a:"سمك (قطعة)", o:o3("fish",16.5,15,10.5) },
         { n:"Fish (2 pcs)", a:"سمك (قطعتان)", o:o3("fish",24,22,19) }]},
@@ -352,7 +351,7 @@
     }
     function togglePay() {
       $('pay-info').innerHTML = $('pay-method').value === 'QR'
-        ? `<img src="${esc(QR_IMAGE)}" alt="QR" class="w-40 mx-auto rounded border">` : esc(BANK_INFO).replace(/\n/g, '<br>');
+        ? `<img src="${esc(QR_IMAGE)}" alt="QR" class="w-52 max-w-full mx-auto rounded border">` : esc(BANK_INFO).replace(/\n/g, '<br>');
     }
 
     function saveOrder(order) {
